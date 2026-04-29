@@ -5,7 +5,9 @@ metadata:
   labels:
     app: leave-management
 spec:
-  replicas: 2
+  replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: leave-management
