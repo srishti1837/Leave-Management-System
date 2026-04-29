@@ -15,31 +15,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadManagerTasks() {
     const user = JSON.parse(localStorage.getItem('currentUser'));
+    // console.log("Fetching tasks for Manager ID:", user.emp_id);
+    
     const res = await fetch(`/api/manager/pending/${user.emp_id}`);
     const data = await res.json();
+    
+    // console.log("Data received from server:", data); // Check your F12 console for this!
+
     const tbody = document.getElementById('mgrTaskTable');
-    const countBadge = document.getElementById('pendingCount');
-
-    countBadge.innerText = `${data.length} Total`;
-
-    if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500">No pending requests for your team.</td></tr>`;
+    
+    if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500">No pending requests found for your team IDs.</td></tr>`;
         return;
     }
 
     tbody.innerHTML = data.map(req => `
-        <tr class="border-b border-slate-700 hover:bg-slate-700/30 transition">
+        <tr class="border-b border-slate-700">
+            <td class="p-4 text-indigo-400 font-bold">${req.emp_id}</td>
             <td class="p-4">
-                <div class="font-bold text-indigo-400">${req.emp_id}</div>
-            </td>
-            <td class="p-4">
-                <div class="text-sm italic text-slate-300">"${req.reason || 'No reason provided'}"</div>
-                <div class="text-xs text-slate-500">${req.type}</div>
+                <div class="text-sm text-slate-200">${req.type}</div>
+                <div class="text-xs italic text-slate-500">"${req.reason}"</div>
             </td>
             <td class="p-4 text-sm text-slate-400">${req.dates}</td>
-            <td class="p-4 text-center space-x-2">
-                <button onclick="updateStatus(${req.id}, 'Approved')" class="bg-emerald-600 text-white px-3 py-1 rounded text-xs hover:bg-emerald-700 transition shadow-lg">Approve</button>
-                <button onclick="updateStatus(${req.id}, 'Rejected')" class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600 transition shadow-lg">Reject</button>
+            <td class="p-4 space-x-2">
+                <button onclick="updateStatus(${req.id}, 'Approved')" class="bg-emerald-600 text-white px-3 py-1 rounded text-xs">Approve</button>
+                <button onclick="updateStatus(${req.id}, 'Rejected')" class="bg-red-500 text-white px-3 py-1 rounded text-xs">Reject</button>
             </td>
         </tr>
     `).join('');

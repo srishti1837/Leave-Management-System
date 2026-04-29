@@ -87,15 +87,27 @@ def get_emp_history(emp_id):
 # 3. View Team Requests (Used by mgr_dashboard.js)
 @app.route('/api/manager/pending/<mgr_id>', methods=['GET'])
 def get_mgr_tasks(mgr_id):
+    # 1. Find all users who report to this manager
     team = User.query.filter_by(manager_id=mgr_id).all()
+    
+    # Check if the manager actually has a team
+    if not team:
+        return jsonify([]) 
+
     team_ids = [member.emp_id for member in team]
-    reqs = LeaveRequest.query.filter(LeaveRequest.emp_id.in_(team_ids), LeaveRequest.status == 'Pending').all()
+    
+    # 2. Find pending requests
+    reqs = LeaveRequest.query.filter(
+        LeaveRequest.emp_id.in_(team_ids), 
+        LeaveRequest.status == 'Pending'
+    ).all()
+    
     return jsonify([{
         "id": r.id,
         "emp_id": r.emp_id,
         "type": r.leave_type,
         "dates": f"{r.start_date} to {r.end_date}",
-        "reason": r.reason # Manager needs to see why they are applying
+        "reason": r.reason
     } for r in reqs])
 
 
