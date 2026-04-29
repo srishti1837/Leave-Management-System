@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory # Added send_from_directory
 from models import db, User, LeaveRequest
 from datetime import datetime
 import os
@@ -11,29 +11,45 @@ app = Flask(__name__,
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 SECRET_KEYS = {
-    "employee": "EMP_789",  # Registration form code for Employees
-    "manager": "MGR_000"    # Registration form code for Managers
+    "employee": "EMP_789",
+    "manager": "MGR_000"
 }
 
-# The DB URL will be injected via Environment Variables in Kubernetes later
-# For local testing, replace with your local postgres string
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///leave_system.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-# Create tables if they don't exist
 with app.app_context():
     db.create_all()
 
+# ==========================================
+# FRONTEND ROUTES (To access your pages)
+# ==========================================
+
 @app.route('/')
 def index():
+    # Serves the main login/index page
     return send_from_directory(app.template_folder, 'index.html')
 
-# Add this to serve your CSS/JS assets
+@app.route('/register')
+def registration_page():
+    # Serves the registration page
+    return send_from_directory(app.template_folder, 'emp_reg.html')
+
+@app.route('/dashboard/employee')
+def emp_dashboard():
+    return send_from_directory(app.template_folder, 'emp_dashboard.html')
+
+@app.route('/dashboard/manager')
+def mgr_dashboard():
+    return send_from_directory(app.template_folder, 'mgr_dashboard.html')
+
+# Essential for serving CSS, JS, and Images from the 'assets' and 'js' folders
 @app.route('/<path:path>')
 def serve_static(path):
     return send_from_directory(app.static_folder, path)
+
 
 
 @app.route('/health', methods=['GET'])
