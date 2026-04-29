@@ -6,17 +6,20 @@ python {
     pip 'backend/requirements.txt'
 }
 
-// Standard Gradle Exec task - this is the most reliable way
-task testApp(type: Exec) {
-    // This tells Gradle to use the python from the virtual environment
-    workingDir 'backend'
-    commandLine 'python', '-m', 'unittest', 'discover'
+// Custom task to run your unit tests
+task testApp(type: ru.vyarus.gradle.plugin.python.task.PythonTask) {
+    // FIX: workDir expects a String path, not a File object
+    workDir = 'backend'
+    
+    // Command to run unittest discovery
+    command = "-m unittest discover"
 }
 
-// Link the setup to the test
+// This is the task Jenkins calls
 task buildApp {
-    dependsOn 'pythonInstall' // This is the standard install task for version 4.x
-    finalizedBy testApp
+    // The plugin handles setup automatically when testApp runs
+    dependsOn testApp
+    
     doLast {
         println "Build and Tests successful for srishti3718's project."
     }
