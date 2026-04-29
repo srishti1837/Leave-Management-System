@@ -8,7 +8,6 @@ pipeline {
     }
 
     stages {
-
         stage('Source') {
             steps {
                 checkout scm
@@ -30,18 +29,15 @@ pipeline {
 
         stage('Dockerize & Push') {
             steps {
-
                 script {
-
+                    // Build using the specific Dockerfile in infrastructure
                     def appImage = docker.build(
                         "${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}",
                         "--no-cache -f infrastructure/docker/Dockerfile ."
                     )
 
                     docker.withRegistry('', 'dockerhub-creds') {
-
                         appImage.push()
-
                         appImage.push('latest')
                     }
                 }
@@ -50,23 +46,20 @@ pipeline {
 
         stage('Deploy') {
             steps {
-
-                bat """
-                kubectl set image deployment/leave-app-deployment \
-                flask-backend=${DOCKER_ID}/${IMAGE_NAME}:${BUILD_ID}
-                """
-
+                // Update the image in the deployment to the specific build ID
+                bat "kubectl set image deployment/leave-app-deployment flask-backend=${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}"
+                
+                // Apply K8s configurations
                 bat 'kubectl apply -f infrastructure/k8s/deployment.yaml --validate=false'
+                bat 'kubectl apply -f infrastructure/k8s/service.yaml --validate=false'
             }
         }
     }
 
     post {
-
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'Pipeline completed successfully! Frontend and Backend are deployed.'
         }
-
         failure {
             echo 'Pipeline failed. Check the console output for details.'
         }

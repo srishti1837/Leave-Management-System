@@ -4,7 +4,10 @@ from datetime import datetime
 import os
 from flask_cors import CORS
 
-app = Flask(__name__)
+app = Flask(__name__, 
+            static_folder='../frontend', 
+            template_folder='../frontend')
+
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 SECRET_KEYS = {
@@ -24,8 +27,14 @@ with app.app_context():
     db.create_all()
 
 @app.route('/')
-def home():
-    return "Leave Management System API is Running! Visit /health to verify."
+def index():
+    return send_from_directory(app.template_folder, 'index.html')
+
+# Add this to serve your CSS/JS assets
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory(app.static_folder, path)
+
 
 @app.route('/health', methods=['GET'])
 def health():

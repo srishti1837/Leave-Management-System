@@ -25,7 +25,6 @@ spec:
             value: "production"
 
 ---
-# Service to expose the app on port 30080 of your nodes
 apiVersion: v1
 kind: Service
 metadata:
