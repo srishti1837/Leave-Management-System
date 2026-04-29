@@ -14,7 +14,7 @@ async function submitLeave() {
         end_date: document.getElementById('endDate').value,
         reason: document.getElementById('leaveReason').value
     };
-    const res = await fetch('http://127.0.0.1:5000/api/leave/apply', {
+    const res = await fetch('/api/leave/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -27,7 +27,7 @@ async function submitLeave() {
 
 async function loadHistory() {
     const user = JSON.parse(localStorage.getItem('currentUser'));
-    const res = await fetch(`http://127.0.0.1:5000/api/leave/history/${user.emp_id}`);
+    const res = await fetch(`/api/leave/history/${user.emp_id}`);
     const data = await res.json();
     document.getElementById('empHistoryTable').innerHTML = data.map(req => `
         <tr class="border-b text-sm">

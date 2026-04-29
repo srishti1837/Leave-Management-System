@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadManagerTasks() {
     const user = JSON.parse(localStorage.getItem('currentUser'));
-    const res = await fetch(`http://127.0.0.1:5000/api/manager/pending/${user.emp_id}`);
+    const res = await fetch(`/api/manager/pending/${user.emp_id}`);
     const data = await res.json();
     const tbody = document.getElementById('mgrTaskTable');
     const countBadge = document.getElementById('pendingCount');
@@ -47,7 +47,7 @@ async function loadManagerTasks() {
 
 async function loadTeamList() {
     const user = JSON.parse(localStorage.getItem('currentUser'));
-    const res = await fetch(`http://127.0.0.1:5000/api/manager/team/${user.emp_id}`);
+    const res = await fetch(`/api/manager/team/${user.emp_id}`);
     const team = await res.json();
     
     const grid = document.getElementById('mgrTeamGrid');
@@ -77,7 +77,7 @@ async function loadTeamList() {
 }
 
 async function viewEmployeeHistory(empId, name) {
-    const res = await fetch(`http://127.0.0.1:5000/api/leave/history/${empId}`);
+    const res = await fetch(`/api/leave/history/${empId}`);
     const history = await res.json();
     
     document.getElementById('modalTitle').innerText = `Leave History: ${name}`;
@@ -109,7 +109,7 @@ async function viewEmployeeHistory(empId, name) {
 }
 
 async function updateStatus(reqId, status) {
-    const res = await fetch('http://127.0.0.1:5000/api/leave/update', {
+    const res = await fetch('/api/leave/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ req_id: reqId, status: status })
