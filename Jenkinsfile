@@ -4,36 +4,22 @@ pipeline {
     environment {
         DOCKER_ID = "srishti3718"
         IMAGE_NAME = "leave-management-system"
-        // Ensure this path points to your actual .kube\config
+        // Ensure this points to your specific .kube\config
         KUBECONFIG = 'C:\\Users\\srish\\.kube\\config'
     }
 
     stages {
         stage('Source') {
             steps {
+                // Pulls the latest code from GitHub
                 checkout scm
-            }
-        }
-
-        stage('Check & Install Dependencies') {
-            steps {
-                echo 'Installing dependencies...'
-                // 1. Install with --user to ensure permissions are correct
-                bat 'python -m pip install --upgrade pip'
-                bat 'python -m pip install --user kubernetes PyYAML ansible'
-                
-                // 2. Use the FULL PATH to ansible-galaxy for this specific build
-                // This bypasses the PATH issue entirely
-                script {
-                    def pythonScripts = "C:\\Users\\srish\\AppData\\Local\\Programs\\Python\\Python313\\Scripts"
-                    bat "${pythonScripts}\\ansible-galaxy collection install -r infrastructure/ansible/requirements.yml --upgrade"
-                }
             }
         }
 
         stage('Build & Test') {
             steps {
                 echo 'Building Application using Gradle...'
+                // Cleans old builds and runs the custom buildApp task
                 bat 'gradlew.bat clean buildApp'
             }
         }
@@ -42,6 +28,7 @@ pipeline {
             steps {
                 script {
                     echo "Building Docker Image for Build ID: ${env.BUILD_ID}"
+                    // Builds the image using the Dockerfile in your infrastructure folder
                     def appImage = docker.build(
                         "${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}",
                         "--no-cache -f infrastructure/docker/Dockerfile ."
@@ -56,30 +43,21 @@ pipeline {
             }
         }
 
-        stage('Ansible Infrastructure Prep') {
-            steps {
-                echo 'Running Ansible Playbook...'
-                script {
-                    def pythonScripts = "C:\\Users\\srish\\AppData\\Local\\Programs\\Python\\Python313\\Scripts"
-                    bat "${pythonScripts}\\ansible-playbook infrastructure/ansible/deploy.yml"
-                }
-            }
-        }
-
         stage('Kubernetes Deploy') {
             steps {
-                echo 'Finalizing Deployment to Kubernetes...'
+                echo 'Deploying to Minikube...'
                 
-                // 1. Ensure Persistent Storage is active
+                // 1. Ensure Persistent Storage (PVC) is created first
+                // This ensures your SQLite database persists across builds
                 bat 'kubectl apply -f infrastructure/k8s/pvc.yaml'
 
-                // 2. Update the Deployment to use the newly pushed image
+                // 2. Update the Deployment to use the newly created image tag
                 bat "kubectl set image deployment/leave-app-deployment flask-backend=${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}"
                 
-                // 3. Apply general configurations (Deployment/Service)
+                // 3. Apply the Deployment and Service configurations
                 bat 'kubectl apply -f infrastructure/k8s/deployment.yaml --validate=false'
 
-                // 4. Verification
+                // 4. Verify that the rollout is progressing successfully
                 bat 'kubectl rollout status deployment/leave-app-deployment'
             }
         }
@@ -87,10 +65,10 @@ pipeline {
 
     post {
         success {
-            echo 'SUCCESS: Full CI/CD cycle complete. Data is persistent and app is live.'
+            echo 'SUCCESS: The Leave Management System is updated and live!'
         }
         failure {
-            echo 'FAILURE: Check the "Console Output" in Jenkins to see which stage failed.'
+            echo 'FAILURE: The pipeline failed. Please check the stage logs above.'
         }
     }
 }
