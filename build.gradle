@@ -3,7 +3,6 @@ plugins {
 }
 
 python {
-    // Installs dependencies from your backend folder
     pip 'backend/requirements.txt'
 }
 
@@ -12,9 +11,10 @@ task testApp(type: ru.vyarus.gradle.plugin.python.task.PythonTask) {
     command = "-m unittest discover backend"
 }
 
-// Main build task (Corrected syntax: dependsOn)
+// Main build task (Updated task dependency for ru.vyarus plugin)
 task buildApp {
-    dependsOn 'pythonInstall'
+    // 'python.install' is the correct internal task name for this plugin
+    dependsOn 'python.install'
     finalizedBy testApp
     doLast {
         println "Build and Tests successful for srishti3718's project."
