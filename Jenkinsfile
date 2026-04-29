@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_ID = "srishti3718"
         IMAGE_NAME = "leave-management-system"
-        // Ensure this points to your specific .kube\config
+        // Update this path if your .kube\config is located elsewhere
         KUBECONFIG = 'C:\\Users\\srish\\.kube\\config'
     }
 
@@ -19,7 +19,6 @@ pipeline {
         stage('Build & Test') {
             steps {
                 echo 'Building Application using Gradle...'
-                // Cleans old builds and runs the custom buildApp task
                 bat 'gradlew.bat clean buildApp'
             }
         }
@@ -28,7 +27,6 @@ pipeline {
             steps {
                 script {
                     echo "Building Docker Image for Build ID: ${env.BUILD_ID}"
-                    // Builds the image using the Dockerfile in your infrastructure folder
                     def appImage = docker.build(
                         "${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}",
                         "--no-cache -f infrastructure/docker/Dockerfile ."
@@ -47,17 +45,17 @@ pipeline {
             steps {
                 echo 'Deploying to Minikube...'
                 
-                // 1. Ensure Persistent Storage (PVC) is created first
-                // This ensures your SQLite database persists across builds
+                // 1. Ensure Persistent Storage (PVC) is created/active
                 bat 'kubectl apply -f infrastructure/k8s/pvc.yaml'
 
-                // 2. Update the Deployment to use the newly created image tag
-                bat "kubectl set image deployment/leave-app-deployment flask-backend=${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}"
-                
-                // 3. Apply the Deployment and Service configurations
+                // 2. CREATE or UPDATE the Deployment/Service manifests first
+                // This prevents the "NotFound" error by ensuring the resource exists
                 bat 'kubectl apply -f infrastructure/k8s/deployment.yaml --validate=false'
 
-                // 4. Verify that the rollout is progressing successfully
+                // 3. NOW update the image to the specific build ID for this run
+                bat "kubectl set image deployment/leave-app-deployment flask-backend=${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}"
+                
+                // 4. Verify that the pod is healthy and running
                 bat 'kubectl rollout status deployment/leave-app-deployment'
             }
         }
@@ -65,10 +63,10 @@ pipeline {
 
     post {
         success {
-            echo 'SUCCESS: The Leave Management System is updated and live!'
+            echo 'SUCCESS: The Leave Management System is live with data persistence!'
         }
         failure {
-            echo 'FAILURE: The pipeline failed. Please check the stage logs above.'
+            echo 'FAILURE: Pipeline failed. Check the logs above to identify the issue.'
         }
     }
 }
