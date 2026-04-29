@@ -46,11 +46,15 @@ pipeline {
 
         stage('Deploy') {
             steps {
+                bat 'kubectl apply -f infrastructure/k8s/pvc.yaml'
+
                 // Update the image in the deployment to the specific build ID
                 bat "kubectl set image deployment/leave-app-deployment flask-backend=${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}"
                 
                 // Apply K8s configurations
                 bat 'kubectl apply -f infrastructure/k8s/deployment.yaml --validate=false'
+
+                bat 'kubectl rollout status deployment/leave-app-deployment'
             }
         }
     }

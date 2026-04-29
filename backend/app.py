@@ -14,8 +14,8 @@ SECRET_KEYS = {
     "employee": "EMP_789",
     "manager": "MGR_000"
 }
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///leave_system.db'
+db_path = "/app/data/leave_system.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
