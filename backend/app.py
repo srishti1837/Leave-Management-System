@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory # Added send_from_directory
+from flask import Flask, request, jsonify, send_from_directory 
 from models import db, User, LeaveRequest
 from datetime import datetime
 import os
@@ -14,18 +14,21 @@ SECRET_KEYS = {
     "employee": "EMP_789",
     "manager": "MGR_000"
 }
-db_path = "/app/data/leave_system.db"
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+DB_PATH = "/app/data/leave_system.db"
+DB_DIR = "/app/data"
+
+# 2. Force the creation of the directory inside the container
+if not os.path.exists(DB_DIR):
+    os.makedirs(DB_DIR, exist_ok=True)
+    print(f"Created directory: {DB_DIR}")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_PATH}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
 with app.app_context():
     db.create_all()
-
-# ==========================================
-# FRONTEND ROUTES (To access your pages)
-# ==========================================
 
 @app.route('/')
 def index():

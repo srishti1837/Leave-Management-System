@@ -16,6 +16,8 @@ spec:
       labels:
         app: leave-management
     spec:
+      securityContext:
+        fsGroup: 2000
       containers:
       - name: flask-backend
         image: srishti3718/leave-management-system:latest
