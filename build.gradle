@@ -1,23 +1,22 @@
 plugins {
-    id "com.github.przemyslawswiderski.python-gradle-plugin" version "1.2.2"
+    id "ru.vyarus.use-python" version "4.0.0"
 }
 
 python {
-    // Points to the requirements file inside your backend folder
-    requirementsFile = file('backend/requirements.txt')
+    // Installs dependencies from your backend folder
+    pip 'backend/requirements.txt'
 }
 
-// Task to run your Flask unit tests
-task testApp(type: com.github.przemyslawswiderski.python.task.PythonTask) {
-    command = "python -m unittest discover backend/tests"
+// Task to run your Python tests
+task testApp(type: ru.vyarus.gradle.plugin.python.task.PythonTask) {
+    command = "-m unittest discover backend"
 }
 
-// Main build task that orchestrates the environment setup and testing
+// Main build task (Corrected syntax: dependsOn)
 task buildApp {
-    depends on 'installPython'
-    depends on 'installPipPackages'
+    dependsOn 'pythonInstall'
     finalizedBy testApp
     doLast {
-        println "Environment prepared and tests executed for srishti3718 project."
+        println "Build and Tests successful for srishti3718's project."
     }
 }
