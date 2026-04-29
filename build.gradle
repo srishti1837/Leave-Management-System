@@ -6,15 +6,16 @@ python {
     pip 'backend/requirements.txt'
 }
 
-// Task to run your Python tests
-task testApp(type: ru.vyarus.gradle.plugin.python.task.PythonTask) {
-    command = "-m unittest discover backend"
+// Standard Gradle Exec task - this is the most reliable way
+task testApp(type: Exec) {
+    // This tells Gradle to use the python from the virtual environment
+    workingDir 'backend'
+    commandLine 'python', '-m', 'unittest', 'discover'
 }
 
-// Main build task (Updated task dependency for ru.vyarus plugin)
+// Link the setup to the test
 task buildApp {
-    // 'python.install' is the correct internal task name for this plugin
-    dependsOn 'python.install'
+    dependsOn 'pythonInstall' // This is the standard install task for version 4.x
     finalizedBy testApp
     doLast {
         println "Build and Tests successful for srishti3718's project."
