@@ -51,7 +51,6 @@ pipeline {
                 
                 // Apply K8s configurations
                 bat 'kubectl apply -f infrastructure/k8s/deployment.yaml --validate=false'
-                bat 'kubectl apply -f infrastructure/k8s/service.yaml --validate=false'
             }
         }
     }
