@@ -17,14 +17,17 @@ pipeline {
 
         stage('Check & Install Dependencies') {
             steps {
-                echo 'Installing Python dependencies and Ansible...'
-                // 1. Install necessary Python libraries and Ansible itself
+                echo 'Installing dependencies...'
+                // 1. Install with --user to ensure permissions are correct
                 bat 'python -m pip install --upgrade pip'
-                bat 'python -m pip install kubernetes PyYAML ansible'
+                bat 'python -m pip install --user kubernetes PyYAML ansible'
                 
-                // 2. Install the K8s collection using the Python module interface
-                echo 'Installing Ansible Galaxy collections...'
-                bat 'python -m ansible.cli.galaxy collection install -r infrastructure/ansible/requirements.yml --upgrade'
+                // 2. Use the FULL PATH to ansible-galaxy for this specific build
+                // This bypasses the PATH issue entirely
+                script {
+                    def pythonScripts = "C:\\Users\\srish\\AppData\\Local\\Programs\\Python\\Python313\\Scripts"
+                    bat "${pythonScripts}\\ansible-galaxy collection install -r infrastructure/ansible/requirements.yml --upgrade"
+                }
             }
         }
 
@@ -55,9 +58,11 @@ pipeline {
 
         stage('Ansible Infrastructure Prep') {
             steps {
-                echo 'Running Ansible Playbook via Python module...'
-                // Using the module path to ensure Ansible runs on Windows Jenkins
-                bat 'python -m ansible.cli.playbook infrastructure/ansible/deploy.yml'
+                echo 'Running Ansible Playbook...'
+                script {
+                    def pythonScripts = "C:\\Users\\srish\\AppData\\Local\\Programs\\Python\\Python313\\Scripts"
+                    bat "${pythonScripts}\\ansible-playbook infrastructure/ansible/deploy.yml"
+                }
             }
         }
 
