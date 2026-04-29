@@ -30,9 +30,10 @@ pipeline {
 
         stage('Dockerize & Push') {
             steps {
+
                 script {
 
-                    docker.build(
+                    def appImage = docker.build(
                         "${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}",
                         "--no-cache -f infrastructure/docker/Dockerfile ."
                     )
