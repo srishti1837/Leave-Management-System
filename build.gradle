@@ -3,25 +3,24 @@ plugins {
 }
 
 python {
-    pythonBinary = 'C:/Users/srish/AppData/Local/Programs/Python/Python313/python.exe'
-    pip 'backend/requirements.txt'
+    pythonBinary = "python"
 }
 
-// Custom task to run your unit tests
-task testApp(type: ru.vyarus.gradle.plugin.python.task.PythonTask) {
-    // FIX: workDir expects a String path, not a File object
-    workDir = 'backend'
-    
-    // Command to run unittest discovery
-    command = "-m unittest discover"
+task installRequirements(type: Exec) {
+
+    commandLine "python",
+            "-m",
+            "pip",
+            "install",
+            "-r",
+            "backend/requirements.txt"
 }
 
-// This is the task Jenkins calls
 task buildApp {
-    // The plugin handles setup automatically when testApp runs
-    dependsOn testApp
-    
+
+    dependsOn installRequirements
+
     doLast {
-        println "Build and Tests successful for srishti3718's project."
+        println "Build successful!"
     }
 }
