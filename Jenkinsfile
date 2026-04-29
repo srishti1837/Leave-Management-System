@@ -4,33 +4,33 @@ pipeline {
     environment {
         DOCKER_ID = "srishti3718"
         IMAGE_NAME = "leave-management-system"
+        // Ensure this path points to your actual .kube\config
         KUBECONFIG = 'C:\\Users\\srish\\.kube\\config'
     }
 
     stages {
         stage('Source') {
             steps {
-                // Pulls the latest code from your GitHub repository
                 checkout scm
             }
         }
 
         stage('Check & Install Dependencies') {
             steps {
-                echo 'Installing Python libraries and Ansible collections...'
-                // Use 'python -m pip' to ensure the module is found
-                bat 'python -m pip install --upgrade pip' 
-                bat 'python -m pip install kubernetes PyYAML'
+                echo 'Installing Python dependencies and Ansible...'
+                // 1. Install necessary Python libraries and Ansible itself
+                bat 'python -m pip install --upgrade pip'
+                bat 'python -m pip install kubernetes PyYAML ansible'
                 
-                // If ansible-galaxy is also not found, use the full path or ensure it's in PATH
-                bat 'ansible-galaxy collection install -r infrastructure/ansible/requirements.yml --upgrade'
+                // 2. Install the K8s collection using the Python module interface
+                echo 'Installing Ansible Galaxy collections...'
+                bat 'python -m ansible.cli.galaxy collection install -r infrastructure/ansible/requirements.yml --upgrade'
             }
         }
 
         stage('Build & Test') {
             steps {
-                echo 'Building Application...'
-                // Runs your Gradle build task
+                echo 'Building Application using Gradle...'
                 bat 'gradlew.bat clean buildApp'
             }
         }
@@ -38,7 +38,7 @@ pipeline {
         stage('Dockerize & Push') {
             steps {
                 script {
-                    echo 'Building Docker Image...'
+                    echo "Building Docker Image for Build ID: ${env.BUILD_ID}"
                     def appImage = docker.build(
                         "${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}",
                         "--no-cache -f infrastructure/docker/Dockerfile ."
@@ -55,26 +55,26 @@ pipeline {
 
         stage('Ansible Infrastructure Prep') {
             steps {
-                echo 'Running Ansible Playbook to verify Infrastructure...'
-                // Ansible ensures the environment (like the PVC) is ready
-                bat 'ansible-playbook infrastructure/ansible/deploy.yml'
+                echo 'Running Ansible Playbook via Python module...'
+                // Using the module path to ensure Ansible runs on Windows Jenkins
+                bat 'python -m ansible.cli.playbook infrastructure/ansible/deploy.yml'
             }
         }
 
         stage('Kubernetes Deploy') {
             steps {
-                echo 'Deploying to Kubernetes Cluster...'
+                echo 'Finalizing Deployment to Kubernetes...'
                 
-                // 1. Ensure the Persistent Volume Claim is applied
+                // 1. Ensure Persistent Storage is active
                 bat 'kubectl apply -f infrastructure/k8s/pvc.yaml'
 
-                // 2. Update the Deployment to use the new image created in this build
+                // 2. Update the Deployment to use the newly pushed image
                 bat "kubectl set image deployment/leave-app-deployment flask-backend=${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}"
                 
-                // 3. Apply the full Deployment/Service manifest
+                // 3. Apply general configurations (Deployment/Service)
                 bat 'kubectl apply -f infrastructure/k8s/deployment.yaml --validate=false'
 
-                // 4. Wait for the pods to be ready
+                // 4. Verification
                 bat 'kubectl rollout status deployment/leave-app-deployment'
             }
         }
@@ -82,10 +82,10 @@ pipeline {
 
     post {
         success {
-            echo 'SUCCESS: The Leave Management System is live with persistent storage.'
+            echo 'SUCCESS: Full CI/CD cycle complete. Data is persistent and app is live.'
         }
         failure {
-            echo 'FAILURE: Pipeline failed. Check the logs above for specific error details.'
+            echo 'FAILURE: Check the "Console Output" in Jenkins to see which stage failed.'
         }
     }
 }
