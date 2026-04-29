@@ -1,13 +1,29 @@
-- name: Deploy Leave System
-  hosts: all
-  become: yes
+---
+- name: K8s Infrastructure Management
+  hosts: localhost
+  connection: local
   tasks:
-    - name: Pull latest Docker image
-      docker_image:
-        name: srishti3718/leave-management-system:latest
-        source: pull
-
-    - name: Install Kubernetes tools
-      apt:
-        name: [kubectl, kubelet, kubeadm]
+    - name: Ensure PVC exists for database persistence
+      kubernetes.core.k8s:
         state: present
+        definition:
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: sqlite-pvc
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Gi
+
+    - name: Verify K8s Deployment State
+      kubernetes.core.k8s_info:
+        kind: Deployment
+        name: leave-app-deployment
+      register: deploy_status
+
+    - name: Print Debug Info
+      debug:
+        msg: "Deployment currently has {{ deploy_status.resources | length }} active resources."

@@ -10,19 +10,24 @@ pipeline {
     stages {
         stage('Source') {
             steps {
+                // Pulls the latest code from your GitHub repository
                 checkout scm
             }
         }
 
-        stage('Check Python') {
+        stage('Check & Install Dependencies') {
             steps {
-                bat 'python --version'
-                bat 'where python'
+                echo 'Installing Python libraries and Ansible collections...'
+                // Ensures the agent has the tools needed for Ansible's K8s modules
+                bat 'pip install kubernetes PyYAML'
+                bat 'ansible-galaxy collection install -r infrastructure/ansible/requirements.yml --upgrade'
             }
         }
 
         stage('Build & Test') {
             steps {
+                echo 'Building Application...'
+                // Runs your Gradle build task
                 bat 'gradlew.bat clean buildApp'
             }
         }
@@ -30,12 +35,13 @@ pipeline {
         stage('Dockerize & Push') {
             steps {
                 script {
-                    // Build using the specific Dockerfile in infrastructure
+                    echo 'Building Docker Image...'
                     def appImage = docker.build(
                         "${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}",
                         "--no-cache -f infrastructure/docker/Dockerfile ."
                     )
 
+                    echo 'Pushing Image to Docker Hub...'
                     docker.withRegistry('', 'dockerhub-creds') {
                         appImage.push()
                         appImage.push('latest')
@@ -44,16 +50,28 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Ansible Infrastructure Prep') {
             steps {
+                echo 'Running Ansible Playbook to verify Infrastructure...'
+                // Ansible ensures the environment (like the PVC) is ready
+                bat 'ansible-playbook infrastructure/ansible/deploy.yml'
+            }
+        }
+
+        stage('Kubernetes Deploy') {
+            steps {
+                echo 'Deploying to Kubernetes Cluster...'
+                
+                // 1. Ensure the Persistent Volume Claim is applied
                 bat 'kubectl apply -f infrastructure/k8s/pvc.yaml'
 
-                // Update the image in the deployment to the specific build ID
+                // 2. Update the Deployment to use the new image created in this build
                 bat "kubectl set image deployment/leave-app-deployment flask-backend=${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}"
                 
-                // Apply K8s configurations
+                // 3. Apply the full Deployment/Service manifest
                 bat 'kubectl apply -f infrastructure/k8s/deployment.yaml --validate=false'
 
+                // 4. Wait for the pods to be ready
                 bat 'kubectl rollout status deployment/leave-app-deployment'
             }
         }
@@ -61,10 +79,10 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline completed successfully! Frontend and Backend are deployed.'
+            echo 'SUCCESS: The Leave Management System is live with persistent storage.'
         }
         failure {
-            echo 'Pipeline failed. Check the console output for details.'
+            echo 'FAILURE: Pipeline failed. Check the logs above for specific error details.'
         }
     }
 }
