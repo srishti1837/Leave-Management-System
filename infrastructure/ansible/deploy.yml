@@ -1,0 +1,13 @@
+- name: Deploy Leave System
+  hosts: all
+  become: yes
+  tasks:
+    - name: Pull latest Docker image
+      docker_image:
+        name: srishti3718/leave-management-system:latest
+        source: pull
+
+    - name: Install Kubernetes tools
+      apt:
+        name: [kubectl, kubelet, kubeadm]
+        state: present

@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: leave-app-deployment
+  labels:
+    app: leave-management
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: leave-management
+  template:
+    metadata:
+      labels:
+        app: leave-management
+    spec:
+      containers:
+      - name: flask-backend
+        image: srishti3718/leave-management-system:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        env:
+          - name: FLASK_ENV
+            value: "production"
+
+---
+# Service to expose the app on port 30080 of your nodes
+apiVersion: v1
+kind: Service
+metadata:
+  name: leave-app-service
+spec:
+  type: NodePort
+  selector:
+    app: leave-management
+  ports:
+    - port: 80
+      targetPort: 5000
+      nodePort: 30080
