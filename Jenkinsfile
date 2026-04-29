@@ -32,7 +32,7 @@ pipeline {
                     def appImage = docker.build("${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}", "-f infrastructure/docker/Dockerfile .")
                     
                     // Matches the 'docker-hub-creds' ID in your Jenkins Credential Provider
-                    docker.withRegistry('', 'docker-hub-creds') {
+                    docker.withRegistry('', 'dockerhub-creds') {
                         appImage.push()
                         appImage.push('latest')
                     }
