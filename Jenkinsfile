@@ -18,8 +18,11 @@ pipeline {
         stage('Check & Install Dependencies') {
             steps {
                 echo 'Installing Python libraries and Ansible collections...'
-                // Ensures the agent has the tools needed for Ansible's K8s modules
-                bat 'pip install kubernetes PyYAML'
+                // Use 'python -m pip' to ensure the module is found
+                bat 'python -m pip install --upgrade pip' 
+                bat 'python -m pip install kubernetes PyYAML'
+                
+                // If ansible-galaxy is also not found, use the full path or ensure it's in PATH
                 bat 'ansible-galaxy collection install -r infrastructure/ansible/requirements.yml --upgrade'
             }
         }
