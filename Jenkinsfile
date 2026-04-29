@@ -32,9 +32,9 @@ pipeline {
             steps {
                 script {
 
-                    def appImage = docker.build(
+                    docker.build(
                         "${DOCKER_ID}/${IMAGE_NAME}:${env.BUILD_ID}",
-                        "-f infrastructure/docker/Dockerfile ."
+                        "--no-cache -f infrastructure/docker/Dockerfile ."
                     )
 
                     docker.withRegistry('', 'dockerhub-creds') {
