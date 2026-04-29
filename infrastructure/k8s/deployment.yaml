@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: flask-backend
-        image: srishti3718/leave-management-system:11
+        image: srishti3718/leave-management-system:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 5000

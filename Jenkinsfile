@@ -51,8 +51,12 @@ pipeline {
         stage('Deploy') {
             steps {
 
-                bat 'kubectl apply -f infrastructure/k8s/deployment.yaml --validate=false'
+                bat """
+                kubectl set image deployment/leave-app-deployment \
+                flask-backend=${DOCKER_ID}/${IMAGE_NAME}:${BUILD_ID}
+                """
 
+                bat 'kubectl apply -f infrastructure/k8s/deployment.yaml --validate=false'
             }
         }
     }
